@@ -464,17 +464,14 @@ exports.BattleMovedex = {
 		priority: 0,
 		flags: {snatch: 1, distance: 1},
 		onHit: function (pokemon, source, move) {
-			this.add('-cureteam', source, '[from] move: Aromatherapy');
+			this.add('-activate', source, 'move: Aromatherapy');
 			let side = pokemon.side;
 			for (let i = 0; i < side.pokemon.length; i++) {
 				if (side.pokemon[i] !== source && ((side.pokemon[i].hasAbility('sapsipper')) ||
 						(side.pokemon[i].volatiles['substitute'] && !move.infiltrates))) {
 					continue;
 				}
-				if (side.pokemon[i].status && side.pokemon[i].hp) {
-					this.add('-curestatus', side.pokemon[i], side.pokemon[i].status);
-					side.pokemon[i].status = '';
-				}
+				side.pokemon[i].cureStatus();
 			}
 		},
 		target: "allyTeam",
@@ -1500,9 +1497,10 @@ exports.BattleMovedex = {
 			let item = target.getItem();
 			if (source.hp && item.isBerry && target.takeItem(source)) {
 				this.add('-enditem', target, item.name, '[from] stealeat', '[move] Bug Bite', '[of] ' + source);
-				this.singleEvent('Eat', item, null, source, null, null);
-				this.runEvent('EatItem', source, null, null, item);
-				source.ateBerry = true;
+				if (this.singleEvent('Eat', item, null, source, null, null)) {
+					this.runEvent('EatItem', source, null, null, item);
+				}
+				if (item.onEat) source.ateBerry = true;
 			}
 		},
 		secondary: false,
@@ -4652,11 +4650,12 @@ exports.BattleMovedex = {
 			onModifyMove: function (move) {
 				let item = this.getItem(this.effectData.item);
 				move.basePower = item.fling.basePower;
-				if (item.isBerry && item.id !== 'enigmaberry') {
+				if (item.isBerry) {
 					move.onHit = function (foe) {
-						this.singleEvent('Eat', item, null, foe, null, null);
-						this.runEvent('EatItem', foe, null, null, item);
-						foe.ateBerry = true;
+						if (this.singleEvent('Eat', item, null, foe, null, null)) {
+							this.runEvent('EatItem', foe, null, null, item);
+						}
+						if (item.onEat) foe.ateBerry = true;
 					};
 				} else if (item.fling.effect) {
 					move.onHit = item.fling.effect;
@@ -6124,14 +6123,11 @@ exports.BattleMovedex = {
 		priority: 0,
 		flags: {snatch: 1, sound: 1, distance: 1, authentic: 1},
 		onHit: function (pokemon, source) {
-			this.add('-cureteam', source, '[from] move: Heal Bell');
+			this.add('-activate', source, 'move: Heal Bell');
 			let side = pokemon.side;
 			for (let i = 0; i < side.pokemon.length; i++) {
 				if (side.pokemon[i].hasAbility('soundproof')) continue;
-				if (side.pokemon[i].status && side.pokemon[i].hp) {
-					this.add('-curestatus', side.pokemon[i], side.pokemon[i].status);
-					side.pokemon[i].status = '';
-				}
+				side.pokemon[i].cureStatus();
 			}
 		},
 		target: "allyTeam",
@@ -10217,9 +10213,10 @@ exports.BattleMovedex = {
 			let item = target.getItem();
 			if (source.hp && item.isBerry && target.takeItem(source)) {
 				this.add('-enditem', target, item.name, '[from] stealeat', '[move] Pluck', '[of] ' + source);
-				this.singleEvent('Eat', item, null, source, null, null);
-				this.runEvent('EatItem', source, null, null, item);
-				source.ateBerry = true;
+				if (this.singleEvent('Eat', item, null, source, null, null)) {
+					this.runEvent('EatItem', source, null, null, item);
+				}
+				if (item.onEat) source.ateBerry = true;
 			}
 		},
 		secondary: false,
@@ -16110,11 +16107,7 @@ exports.BattleMovedex = {
 			onStart: function (side, source) {
 				this.add('-fieldstart', 'move: WonderRoom', '[of] ' + source);
 			},
-			onModifyMovePriority: -100,
-			onModifyMove: function (move) {
-				move.defensiveCategory = ((move.defensiveCategory || this.getCategory(move)) === 'Physical' ? 'Special' : 'Physical');
-				this.debug('Defensive Category: ' + move.defensiveCategory);
-			},
+			// Swapping defenses implemented in battle-engine.js:BattlePokemon#calculateStat and BattlePokemon#getStat
 			onResidualOrder: 24,
 			onEnd: function () {
 				this.add('-fieldend', 'move: Wonder Room');

@@ -29,6 +29,7 @@ function makeUser(name, connection) {
 	let user = new User(connection);
 	user.name = name;
 	user.userid = name.toLowerCase().replace(/[^a-z0-9-]+/g, '');
+	Users.users.set(user.userid, user);
 	return user;
 }
 
@@ -51,7 +52,7 @@ describe('Trivia', function () {
 
 	beforeEach(function () {
 		let questions = [{question: '', answers: ['answer'], category: 'ae'}];
-		this.game = new Trivia(this.room, 'first', 'ae', 'short', questions);
+		this.game = this.room.game = new Trivia(this.room, 'first', 'ae', 'short', questions);
 		this.user = makeUser('Morfent', new Connection('127.0.0.1'));
 	});
 
@@ -178,7 +179,7 @@ describe('Trivia', function () {
 			game.start();
 			game.askQuestion();
 
-			this.game = game;
+			this.game = this.room.game = game;
 			this.player = game.players[this.user.userid];
 		});
 
@@ -238,7 +239,7 @@ describe('Trivia', function () {
 			game.start();
 			game.askQuestion();
 
-			this.game = game;
+			this.game = this.room.game = game;
 			this.player = game.players[this.user.userid];
 		});
 
@@ -309,7 +310,7 @@ describe('Trivia', function () {
 			game.start();
 			game.askQuestion();
 
-			this.game = game;
+			this.game = this.room.game = game;
 			this.player = game.players[this.user.userid];
 		});
 
